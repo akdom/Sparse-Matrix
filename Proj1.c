@@ -1,21 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+typedef struct Node Node;
 struct Node {
 	unsigned long col;
 	double val;
 	struct Node *next;
 };
 
-<<<<<<< HEAD:Proj1.c
-int main () {
-	struct Node rows[4];
-	rows[0].next = (struct Node *) malloc(sizeof(struct Node));
-	rows[0].next->val = 2.3;
-	rows[0].next->col = 3;
-	printf("%d, %lf", rows[0].next->col, rows[0].next->val);
-	return (0);
-=======
 void get_dimensions(int *dim, int *entries, FILE *input_file);
 int imprint_node(Node *new, FILE *input_file);
 void insert_node(Node *matrix[], Node *new, int row);
@@ -53,7 +45,6 @@ int main (int argc, char *argv[]) {
     
     fclose(input_file);
     return (0);
->>>>>>> 520b590... Initial... again:Proj1.c
 }
 
 void get_dimensions(int *dim, int *entries, FILE *input_file) {
