@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <time.h>
 
+#define DELTA_T(time) ( (clock()-time)/(double)CLOCKS_PER_SEC )
+#define EPSILON 1e-6
+#define ITERMAX 100
+
 typedef struct Entry Entry;
 struct Entry {
   unsigned long row, col;
@@ -11,15 +15,18 @@ struct Entry {
 void get_entry(Entry *entry, FILE *input_file);
 void get_dimensions(long *dim, long *entries, FILE *input_file);
 void print_matrix(Entry matrix[], long entries);
+void print_vect(double vect[], long dim);
 int row_sort(const void *_a, const void *_b);
 int col_sort(const void *_a, const void *_b);
 void right_mult(Entry matrix[], long entries, double vector[], double out[]);
 void left_mult(Entry matrix[], long entries, double vector[], double out[]);
-
+void normalize(double vector[], long dim);
+double vect_diff(double a[], double b[], long dim);
 
 int main (int argc, char *argv[]) {
     long dim, entries;
     clock_t time = clock();
+    double *temp, *source, *dest, *d, diff;
     
     char *filename = argv[1];
     if (filename == NULL) {
@@ -32,19 +39,40 @@ int main (int argc, char *argv[]) {
     
     //Create our matrix
     Entry matrix[entries];
-    double source[dim], dest[dim];
+    double vector1[dim], vector2[dim];
         
     int i;
     for(i=0; i < entries; i++) {
         get_entry(&matrix[i], input_file);	
     }
-    printf("Time taken to load matrix: %lfs\n", (clock()-time)/(double)CLOCKS_PER_SEC);
+    printf("Time to load matrix: %lf\n", DELTA_T(time));
+
     for(i=0; i < dim; i+=2) {
-	source[i]=1.0/(dim/2.0);
+	vector1[i]=1.0;
     }
-        
-    left_mult(matrix, entries, source, dest);
+    // start them in the "wrong" order, so that the first swap corrects it
+    dest = vector1;
+    source = vector2;
+    normalize(dest, dim);
     
+    time = clock();
+    for(i=0; i<100; i++) {
+	//swap the vectors
+	temp = source;
+	source = dest;
+	dest = temp;
+	for(d = &dest[dim-1]; d!=dest; d--) *d = 0.0; //clear dest
+
+	left_mult(matrix, entries, source, dest);
+	normalize(dest, dim);
+	
+	diff = vect_diff(dest, source, dim);
+	printf("i: %d; |z-x|: %lg\n", i, diff);
+	if (diff < EPSILON) break;
+    }
+    printf("Time to compute eigenvector: %lf\n", DELTA_T(time)); 
+    
+
     fclose(input_file);
     return (0);
 }
@@ -80,40 +108,44 @@ void print_matrix(Entry matrix[], long entries) {
     }
 }
 
+void print_vect(double vect[], long dim) {
+    long i;
+    for(i=0; i<dim; i++) {
+	printf("i: %ld; val: %lg\n", i, vect[i]);
+    }
+}
+
 void right_mult(Entry matrix[], long entries, double vector[], double out[]) {
     int i;
     Entry *e;
     for(i=0, e=matrix; i<entries; i++, e++) {
-	out[e->row] += e->val * vector[e->col];
+	out[e->row-1] += e->val * vector[e->col-1];
     }
 }
 
 void left_mult(Entry matrix[], long entries, double vector[], double out[]) {
-    int i;
     Entry *e;
-    for(i=0, e=matrix; i<entries; i++, e++) {
-	out[e->col] += e->val * vector[e->row];
+    for(e=matrix; e<=&matrix[entries-1]; e++) {
+	out[(e->col)-1] += e->val * vector[(e->row)-1];
     }
 }
 
 void normalize(double vector[], long dim) {
-    double total;
-    int i;
-    for(i=0; i<dim; i++) {
-	total += vector[i];
-    }
-    for(i=0; i<dim; i++) {
-	vector[i] /= total;
-    }
-}
-
-void normalize2(double vector[], long dim) {
     double *cur, *last, total;
-    last = &vector[dim];
+    last = &vector[dim-1];
     for(cur=vector; cur<=last; cur++) {
 	total += *cur;
     }
     for(cur=vector; cur<=last; cur++) {
 	*cur /= total;
     }
+}
+
+double vect_diff(double a[], double b[], long dim) {
+    double *cur_a, *cur_b, *last_a, total;
+    last_a = &a[dim];
+    for(cur_a=a, cur_b=b; cur_a<=last_a; cur_a++, cur_b++) {
+	total += ((*cur_a - *cur_b)>0 ? (*cur_a - *cur_b) : (*cur_b - *cur_a));
+    }
+    return total;
 }
