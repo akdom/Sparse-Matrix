@@ -56,7 +56,7 @@ int main (int argc, char *argv[]) {
     normalize(dest, dim);
     
     time = clock();
-    for(i=0; i<100; i++) {
+    for(i=0; i<ITERMAX; i++) {
 	//swap the vectors
 	temp = source;
 	source = dest;
@@ -70,7 +70,34 @@ int main (int argc, char *argv[]) {
 	printf("i: %d; |z-x|: %lg\n", i, diff);
 	if (diff < EPSILON) break;
     }
-    printf("Time to compute eigenvector: %lf\n", DELTA_T(time)); 
+    printf("Time to compute left eigenvector: %lf\n", DELTA_T(time)); 
+    
+    //****Right eigenvector****
+    time = clock();
+    for(i=0; i < dim; i+=2) {
+	vector1[i]=1.0;
+    }
+    // start them in the "wrong" order, so that the first swap corrects it
+    dest = vector1;
+    source = vector2;
+    normalize(dest, dim);
+    
+    time = clock();
+    for(i=0; i<ITERMAX; i++) {
+	//swap the vectors
+	temp = source;
+	source = dest;
+	dest = temp;
+	for(d = &dest[dim-1]; d!=dest; d--) *d = 0.0; //clear dest
+
+	right_mult(matrix, entries, source, dest);
+	normalize(dest, dim);
+	
+	diff = vect_diff(dest, source, dim);
+	printf("i: %d; |z-x|: %lg\n", i, diff);
+	if (diff < EPSILON) break;
+    }
+    printf("Time to compute right eigenvector: %lf\n", DELTA_T(time)); 
     
 
     fclose(input_file);
@@ -116,16 +143,15 @@ void print_vect(double vect[], long dim) {
 }
 
 void right_mult(Entry matrix[], long entries, double vector[], double out[]) {
-    int i;
     Entry *e;
-    for(i=0, e=matrix; i<entries; i++, e++) {
+    for(e=&matrix[entries-1]; e>=matrix; e--) {
 	out[e->row-1] += e->val * vector[e->col-1];
     }
 }
 
 void left_mult(Entry matrix[], long entries, double vector[], double out[]) {
     Entry *e;
-    for(e=matrix; e<=&matrix[entries-1]; e++) {
+    for(e=&matrix[entries-1]; e>=matrix; e--) {
 	out[(e->col)-1] += e->val * vector[(e->row)-1];
     }
 }
