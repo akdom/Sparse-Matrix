@@ -22,11 +22,11 @@ void right_mult(Entry matrix[], long entries, double vector[], double out[]);
 void left_mult(Entry matrix[], long entries, double vector[], double out[]);
 void normalize(double vector[], long dim);
 double vect_diff(double a[], double b[], long dim);
+void calc_eigenvector(Entry matrix[], long entries, long dim, void (*mult)(Entry matrix[], long entries, double vector[], double out[]));
 
 int main (int argc, char *argv[]) {
     long dim, entries;
     clock_t time = clock();
-    double *temp, *source, *dest, *d, diff;
     
     char *filename = argv[1];
     if (filename == NULL) {
@@ -39,7 +39,6 @@ int main (int argc, char *argv[]) {
     
     //Create our matrix
     Entry matrix[entries];
-    double vector1[dim], vector2[dim];
         
     int i;
     for(i=0; i < entries; i++) {
@@ -47,60 +46,16 @@ int main (int argc, char *argv[]) {
     }
     printf("Time to load matrix: %lf\n", DELTA_T(time));
 
-    for(i=0; i < dim; i+=2) {
-	vector1[i]=1.0;
-    }
-    // start them in the "wrong" order, so that the first swap corrects it
-    dest = vector1;
-    source = vector2;
-    normalize(dest, dim);
-    
-    time = clock();
-    for(i=0; i<ITERMAX; i++) {
-	//swap the vectors
-	temp = source;
-	source = dest;
-	dest = temp;
-	for(d = &dest[dim-1]; d!=dest; d--) *d = 0.0; //clear dest
-
-	left_mult(matrix, entries, source, dest);
-	normalize(dest, dim);
-	
-	diff = vect_diff(dest, source, dim);
-	printf("i: %d; |z-x|: %lg\n", i, diff);
-	if (diff < EPSILON) break;
-    }
-    printf("Time to compute left eigenvector: %lf\n", DELTA_T(time)); 
-    
-    //****Right eigenvector****
-    time = clock();
-    for(i=0; i < dim; i+=2) {
-	vector1[i]=1.0;
-    }
-    // start them in the "wrong" order, so that the first swap corrects it
-    dest = vector1;
-    source = vector2;
-    normalize(dest, dim);
-    
-    time = clock();
-    for(i=0; i<ITERMAX; i++) {
-	//swap the vectors
-	temp = source;
-	source = dest;
-	dest = temp;
-	for(d = &dest[dim-1]; d!=dest; d--) *d = 0.0; //clear dest
-
-	right_mult(matrix, entries, source, dest);
-	normalize(dest, dim);
-	
-	diff = vect_diff(dest, source, dim);
-	printf("i: %d; |z-x|: %lg\n", i, diff);
-	if (diff < EPSILON) break;
-    }
-    printf("Time to compute right eigenvector: %lf\n", DELTA_T(time)); 
-    
-
     fclose(input_file);
+
+    time=clock();
+    calc_eigenvector(matrix, entries, dim, &left_mult);
+    printf("Time to compute left eigenvector: %lf\n", DELTA_T(time));
+
+    time=clock();
+    calc_eigenvector(matrix, entries, dim, &right_mult);
+    printf("Time to compute right eigenvector: %lf\n", DELTA_T(time)); 
+
     return (0);
 }
 
@@ -161,6 +116,7 @@ void normalize(double vector[], long dim) {
     last = &vector[dim-1];
     for(cur=vector; cur<=last; cur++) {
 	total += *cur;
+	//printf("*cur: %lf\n", *cur); 
     }
     for(cur=vector; cur<=last; cur++) {
 	*cur /= total;
@@ -169,9 +125,43 @@ void normalize(double vector[], long dim) {
 
 double vect_diff(double a[], double b[], long dim) {
     double *cur_a, *cur_b, *last_a, total;
-    last_a = &a[dim];
+    last_a = &a[dim-1];
     for(cur_a=a, cur_b=b; cur_a<=last_a; cur_a++, cur_b++) {
-	total += ((*cur_a - *cur_b)>0 ? (*cur_a - *cur_b) : (*cur_b - *cur_a));
+      //      printf("*cur_a: %lg\n", *cur_a);
+      total += ((*cur_a - *cur_b)>0 ? (*cur_a - *cur_b) : (*cur_b - *cur_a));
     }
     return total;
+}
+
+void calc_eigenvector(Entry matrix[], long entries, long dim, void (*mult)(Entry matrix[], long entries, double vector[], double out[])) {
+    double vector1[dim], vector2[dim];
+    double *temp, *source, *dest, *d, diff;
+
+    int i;
+    for(i=0; i < dim; i++) {
+      vector1[i]= 1.0 * ((i+1) % 2);
+    }
+    // start them in the "wrong" order, so that the first swap corrects it
+    dest = vector1;
+    source = vector2;
+    //print_vect(dest, dim);
+
+    normalize(dest, dim);
+
+    for(i=0; i<ITERMAX; i++) {
+	//swap the vectors
+	temp = source;
+	source = dest;
+	dest = temp;
+	for(d = &dest[dim-1]; d!=dest; d--) *d = 0.0; //clear dest
+	
+
+	mult(matrix, entries, source, dest);
+
+	normalize(dest, dim);
+	
+	diff = vect_diff(dest, source, dim);
+	printf("i: %d; |z-x|: %lg\n", i, diff);
+	if (diff < EPSILON) break;
+	}
 }
