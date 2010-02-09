@@ -112,7 +112,7 @@ void left_mult(Entry matrix[], long entries, double vector[], double out[]) {
 }
 
 void normalize(double vector[], long dim) {
-    double *cur, *last, total;
+    double *cur, *last, total=0;
     last = &vector[dim-1];
     for(cur=vector; cur<=last; cur++) {
 	total += *cur;
@@ -124,7 +124,7 @@ void normalize(double vector[], long dim) {
 }
 
 double vect_diff(double a[], double b[], long dim) {
-    double *cur_a, *cur_b, *last_a, total;
+    double *cur_a, *cur_b, *last_a, total=0;
     last_a = &a[dim-1];
     for(cur_a=a, cur_b=b; cur_a<=last_a; cur_a++, cur_b++) {
       //      printf("*cur_a: %lg\n", *cur_a);
