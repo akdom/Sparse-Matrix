@@ -22,11 +22,12 @@ void right_mult(Entry matrix[], long entries, double vector[], double out[]);
 void left_mult(Entry matrix[], long entries, double vector[], double out[]);
 void normalize(double vector[], long dim);
 double vect_diff(double a[], double b[], long dim);
-void calc_eigenvector(Entry matrix[], long entries, long dim, void (*mult)(Entry matrix[], long entries, double vector[], double out[]));
+int calc_eigenvector(Entry matrix[], long entries, long dim, void (*mult)(Entry matrix[], long entries, double vector[], double out[]));
 
 int main (int argc, char *argv[]) {
     long dim, entries;
     clock_t time = clock();
+    int iterations;
     
     char *filename = argv[1];
     if (filename == NULL) {
@@ -39,22 +40,37 @@ int main (int argc, char *argv[]) {
     
     //Create our matrix
     Entry matrix[entries];
+    Entry *rows[dim];
         
     int i;
-    for(i=0; i < entries; i++) {
-        get_entry(&matrix[i], input_file);	
+    Entry *e, *last=&matrix[entries-1];
+    long unsigned int cur_row = 1, prev_row = 1;
+    
+    for(e=matrix; e<=last; e++) {
+        prev_row = cur_row;
+        (void) fscanf(input_file, "%lf %lu %lu", &(e->val), &(e->col), &cur_row);
+        if (cur_row != prev_row) {
+            rows[cur_row-1] = e;
+        }
+	printf("prev_row: %lu; cur_row: %lu; e: %lu\n", prev_row, cur_row, (long unsigned int)e);
+	e->row=1;
     }
+
+    for(i=0; i<dim; i++) {
+        printf("i: %d; *row: %lu\n", i, (long unsigned int)rows[i]);
+    }
+
     printf("Time to load matrix: %lf\n", DELTA_T(time));
 
     fclose(input_file);
 
     time=clock();
-    calc_eigenvector(matrix, entries, dim, &left_mult);
-    printf("Time to compute left eigenvector: %lf\n", DELTA_T(time));
+    iterations = calc_eigenvector(matrix, entries, dim, &left_mult);
+    printf("Time to compute left eigenvector: %lf; iterations: %d;\n", DELTA_T(time), iterations);
 
     time=clock();
-    calc_eigenvector(matrix, entries, dim, &right_mult);
-    printf("Time to compute right eigenvector: %lf\n", DELTA_T(time)); 
+    iterations =  calc_eigenvector(matrix, entries, dim, &right_mult);
+    printf("Time to compute right eigenvector: %lf; iterations: %d;\n", DELTA_T(time), iterations); 
 
     return (0);
 }
@@ -65,10 +81,6 @@ void get_dimensions(long *dim, long *entries, FILE *input_file) {
         return;
     else
         return;
-}
-
-void get_entry(Entry *entry, FILE *input_file) {
-    fscanf(input_file, "%lf %lu %lu", &(entry->val), &(entry->col), &(entry->row));
 }
 
 int row_sort(const void *a, const void *b) {
@@ -133,7 +145,7 @@ double vect_diff(double a[], double b[], long dim) {
     return total;
 }
 
-void calc_eigenvector(Entry matrix[], long entries, long dim, void (*mult)(Entry matrix[], long entries, double vector[], double out[])) {
+int calc_eigenvector(Entry matrix[], long entries, long dim, void (*mult)(Entry matrix[], long entries, double vector[], double out[])) {
     double vector1[dim], vector2[dim];
     double *temp, *source, *dest, *d, diff;
 
@@ -161,7 +173,8 @@ void calc_eigenvector(Entry matrix[], long entries, long dim, void (*mult)(Entry
 	normalize(dest, dim);
 	
 	diff = vect_diff(dest, source, dim);
-	printf("i: %d; |z-x|: %lg\n", i, diff);
+	//	printf("i: %d; |z-x|: %lg\n", i, diff);
 	if (diff < EPSILON) break;
-	}
+    }
+    return i;
 }
