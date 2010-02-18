@@ -8,7 +8,7 @@
 
 typedef struct Entry Entry;
 struct Entry {
-  unsigned long row, col;
+  unsigned long col;
   double val;
 };
 
@@ -18,11 +18,11 @@ void print_matrix(Entry matrix[], long entries);
 void print_vect(double vect[], long dim);
 int row_sort(const void *_a, const void *_b);
 int col_sort(const void *_a, const void *_b);
-void right_mult(Entry matrix[], long entries, double vector[], double out[]);
-void left_mult(Entry matrix[], long entries, double vector[], double out[]);
+void right_mult(Entry matrix[], long entries, Entry *rows[], long dim, double vector[], double out[]);
+void left_mult(Entry matrix[], long entries, Entry *rows[], long dim, double vector[], double out[]);
 void normalize(double vector[], long dim);
 double vect_diff(double a[], double b[], long dim);
-int calc_eigenvector(Entry matrix[], long entries, long dim, void (*mult)(Entry matrix[], long entries, double vector[], double out[]));
+int calc_eigenvector(Entry matrix[], long entries, Entry *rows[], long dim, void (*mult)(Entry matrix[], long entries, Entry *rows[], long dim, double vector[], double out[]));
 
 int main (int argc, char *argv[]) {
     long dim, entries;
@@ -40,11 +40,12 @@ int main (int argc, char *argv[]) {
     
     //Create our matrix
     Entry matrix[entries];
-    Entry *rows[dim];
+    Entry *rows[dim+1];
+    rows[dim]=0;
         
     int i;
     Entry *e, *last=&matrix[entries-1];
-    long unsigned int cur_row = 1, prev_row = 1;
+    long unsigned int cur_row = 0, prev_row = 0;
     
     for(e=matrix; e<=last; e++) {
         prev_row = cur_row;
@@ -52,12 +53,12 @@ int main (int argc, char *argv[]) {
         if (cur_row != prev_row) {
             rows[cur_row-1] = e;
         }
-	printf("prev_row: %lu; cur_row: %lu; e: %lu\n", prev_row, cur_row, (long unsigned int)e);
-	e->row=1;
+	//	printf("prev_row: %lu; cur_row: %lu; e: %lu\n", prev_row, cur_row, (long unsigned int)e);
+	e->col--;
     }
 
-    for(i=0; i<dim; i++) {
-        printf("i: %d; *row: %lu\n", i, (long unsigned int)rows[i]);
+    for(i=0; i<=dim; i++) {
+	//        printf("i: %d; *row: %lu\n", i, (long unsigned int)rows[i]);
     }
 
     printf("Time to load matrix: %lf\n", DELTA_T(time));
@@ -65,11 +66,11 @@ int main (int argc, char *argv[]) {
     fclose(input_file);
 
     time=clock();
-    iterations = calc_eigenvector(matrix, entries, dim, &left_mult);
+    iterations = calc_eigenvector(matrix, entries, rows, dim, &left_mult);
     printf("Time to compute left eigenvector: %lf; iterations: %d;\n", DELTA_T(time), iterations);
 
     time=clock();
-    iterations =  calc_eigenvector(matrix, entries, dim, &right_mult);
+    iterations =  calc_eigenvector(matrix, entries, rows, dim, &right_mult);
     printf("Time to compute right eigenvector: %lf; iterations: %d;\n", DELTA_T(time), iterations); 
 
     return (0);
@@ -83,22 +84,10 @@ void get_dimensions(long *dim, long *entries, FILE *input_file) {
         return;
 }
 
-int row_sort(const void *a, const void *b) {
-    return (((Entry*)a)->row - ((Entry*)b)->row) ?
-	(((Entry*)a)->row - ((Entry*)b)->row) :
-	(((Entry*)a)->col - ((Entry*)b)->col);
-}
-
-int col_sort(const void *a, const void *b) {
-    return (((Entry*)a)->col - ((Entry*)b)->col) ?
-	(((Entry*)a)->col - ((Entry*)b)->col) :
-	(((Entry*)a)->row - ((Entry*)b)->row);	
-}
-
 void print_matrix(Entry matrix[], long entries) {
     int i;
     for(i=0; i<entries; i++) {
-	printf("Val: %lf; Col: %lu; Row: %lu;\n", matrix[i].val, matrix[i].col, matrix[i].row);
+	printf("Val: %lf; Col: %lu\n", matrix[i].val, matrix[i].col);
     }
 }
 
@@ -109,22 +98,29 @@ void print_vect(double vect[], long dim) {
     }
 }
 
-void right_mult(Entry matrix[], long entries, double vector[], double out[]) {
+void right_mult(Entry matrix[], long entries, Entry *rows[], long dim, double vector[], double out[]) {
     Entry *e;
-    for(e=&matrix[entries-1]; e>=matrix; e--) {
-	out[e->row-1] += e->val * vector[e->col-1];
+    long i;
+    for(i=0; i<dim; i++) {
+	for(e=rows[i]; e<rows[i+1]; e++) {
+	    out[i] += e->val * vector[e->col];
+	    //	    printf("i: %lu; row: %lu; e->val: %lg; e->col: %lu\n", i, (unsigned long)rows[i], e->val, e->col);
+	}
     }
 }
 
-void left_mult(Entry matrix[], long entries, double vector[], double out[]) {
+void left_mult(Entry matrix[], long entries, Entry *rows[], long dim, double vector[], double out[]) {
     Entry *e;
-    for(e=&matrix[entries-1]; e>=matrix; e--) {
-	out[(e->col)-1] += e->val * vector[(e->row)-1];
+    int i;
+    for(i=0; i<dim; i++) {
+	for(e=rows[i]; e<=rows[i+1]; e++) {
+	    out[e->col] += e->val * vector[i];
+	}
     }
 }
 
 void normalize(double vector[], long dim) {
-    double *cur, *last, total;
+    double *cur, *last, total=0;
     last = &vector[dim-1];
     for(cur=vector; cur<=last; cur++) {
 	total += *cur;
@@ -136,7 +132,7 @@ void normalize(double vector[], long dim) {
 }
 
 double vect_diff(double a[], double b[], long dim) {
-    double *cur_a, *cur_b, *last_a, total;
+    double *cur_a, *cur_b, *last_a, total=0;
     last_a = &a[dim-1];
     for(cur_a=a, cur_b=b; cur_a<=last_a; cur_a++, cur_b++) {
       //      printf("*cur_a: %lg\n", *cur_a);
@@ -145,7 +141,7 @@ double vect_diff(double a[], double b[], long dim) {
     return total;
 }
 
-int calc_eigenvector(Entry matrix[], long entries, long dim, void (*mult)(Entry matrix[], long entries, double vector[], double out[])) {
+int calc_eigenvector(Entry matrix[], long entries, Entry *rows[], long dim, void (*mult)(Entry matrix[], long entries, Entry *rows[], long dim, double vector[], double out[])) {
     double vector1[dim], vector2[dim];
     double *temp, *source, *dest, *d, diff;
 
@@ -167,13 +163,12 @@ int calc_eigenvector(Entry matrix[], long entries, long dim, void (*mult)(Entry 
 	dest = temp;
 	for(d = &dest[dim-1]; d!=dest; d--) *d = 0.0; //clear dest
 	
-
-	mult(matrix, entries, source, dest);
+	mult(matrix, entries, rows, dim, source, dest);
 
 	normalize(dest, dim);
 	
 	diff = vect_diff(dest, source, dim);
-	//	printf("i: %d; |z-x|: %lg\n", i, diff);
+		printf("i: %d; |z-x|: %lg\n", i, diff);
 	if (diff < EPSILON) break;
     }
     return i;
