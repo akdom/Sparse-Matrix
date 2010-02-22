@@ -43,13 +43,16 @@ int main (int argc, char *argv[]) {
     Entry *rows[dim+1];
     rows[dim]=0;
         
-    int i;
+    int i,count;
     Entry *e, *last=&matrix[entries-1];
     long unsigned int cur_row = 0, prev_row = 0;
     
     for(e=matrix; e<=last; e++) {
         prev_row = cur_row;
-        (void) fscanf(input_file, "%lf %lu %lu", &(e->val), &(e->col), &cur_row);
+        count = fscanf(input_file, "%lf %lu %lu", &(e->val), &(e->col), &cur_row);
+	if (count != 3) {
+	    perror("The data file has a corrupt line\n");
+	}
         if (cur_row != prev_row) {
             rows[cur_row-1] = e;
         }
@@ -78,10 +81,9 @@ int main (int argc, char *argv[]) {
 
 void get_dimensions(long *dim, long *entries, FILE *input_file) {
     int count = fscanf(input_file, "%ld %ld", dim, entries);
-    if (count == 2)
-        return;
-    else
-        return;
+    if(count != 2) {
+	perror("The input file does not state the dimension and number of entries on the first line.\n");
+    }
 }
 
 void print_matrix(Entry matrix[], long entries) {
@@ -113,7 +115,7 @@ void left_mult(Entry matrix[], long entries, Entry *rows[], long dim, double vec
     Entry *e;
     int i;
     for(i=0; i<dim; i++) {
-	for(e=rows[i]; e<=rows[i+1]; e++) {
+	for(e=rows[i]; e<rows[i+1]; e++) {
 	    out[e->col] += e->val * vector[i];
 	}
     }
@@ -168,7 +170,7 @@ int calc_eigenvector(Entry matrix[], long entries, Entry *rows[], long dim, void
 	normalize(dest, dim);
 	
 	diff = vect_diff(dest, source, dim);
-		printf("i: %d; |z-x|: %lg\n", i, diff);
+	//printf("i: %d; |z-x|: %lg\n", i, diff);
 	if (diff < EPSILON) break;
     }
     return i;
