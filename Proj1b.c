@@ -61,14 +61,16 @@ int main (int argc, char *argv[]) {
 
 void get_dimensions(long *dim, long *entries, FILE *input_file) {
     int count = fscanf(input_file, "%ld %ld", dim, entries);
-    if (count == 2)
-        return;
-    else
-        return;
+    if (count != 2) {
+	perror("The file does not list the dimension and number of entries on the first line\n");
+    }
 }
 
 void get_entry(Entry *entry, FILE *input_file) {
-    fscanf(input_file, "%lf %lu %lu", &(entry->val), &(entry->col), &(entry->row));
+    int count = fscanf(input_file, "%lf %lu %lu", &(entry->val), &(entry->col), &(entry->row));
+    if (count != 3) {
+	perror("The data file has a corrupt line\n");
+    }
 }
 
 int row_sort(const void *a, const void *b) {
@@ -161,7 +163,7 @@ void calc_eigenvector(Entry matrix[], long entries, long dim, void (*mult)(Entry
 	normalize(dest, dim);
 	
 	diff = vect_diff(dest, source, dim);
-	printf("i: %d; |z-x|: %lg\n", i, diff);
+	//	printf("i: %d; |z-x|: %lg\n", i, diff);
 	if (diff < EPSILON) break;
 	}
 }
