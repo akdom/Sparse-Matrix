@@ -70,11 +70,11 @@ int main (int argc, char *argv[]) {
 
     time=clock();
     iterations = calc_eigenvector(matrix, entries, rows, dim, &left_mult);
-    printf("Time to compute left eigenvector: %lf; iterations: %d;\n", DELTA_T(time), iterations);
+    printf("Time to compute left eigenvector: %lf; iterations: %d;\n", DELTA_T(time), iterations+1);
 
     time=clock();
     iterations =  calc_eigenvector(matrix, entries, rows, dim, &right_mult);
-    printf("Time to compute right eigenvector: %lf; iterations: %d;\n", DELTA_T(time), iterations); 
+    printf("Time to compute right eigenvector: %lf; iterations: %d;\n", DELTA_T(time), iterations+1); 
 
     return (0);
 }
@@ -170,7 +170,7 @@ int calc_eigenvector(Entry matrix[], long entries, Entry *rows[], long dim, void
 	normalize(dest, dim);
 	
 	diff = vect_diff(dest, source, dim);
-	//printf("i: %d; |z-x|: %lg\n", i, diff);
+	printf("i: %d; |x-%c|: %lg\n", i, (mult==&left_mult ? 'y' : 'z'), diff);
 	if (diff < EPSILON) break;
     }
     return i;
