@@ -1,0 +1,19 @@
+This program was written by Alex Kesling and Samuel Christie.
+
+No reference code was used or modified in the making of this project.
+
+To compile and run the project:
+
+1.
+    make proj1.out
+
+2.
+    ./proj1.out <sparse-data-file>
+
+-- Description of the code and data structure used in this program:
+
+This program uses a version of the "Compressed sparse row matrix" data structure.
+
+Each element of the matrix is represented by a struct that contains the value and column index. The program reads each line of the data file and adds the element to an array the size of the number of elements. Every time the row changes, the pointer to that element is stored under the correct index of the rows array.
+
+When the program multiplies, it loops through the rows array, gets the element at that pointer, and increments down the elements array. Each elemement's value is then multiplied against the correct value of the input vector using it's column number and the current row counter. This process is repeated until the max number of iterations is reached, or the eigenvector converges within tolerance.
