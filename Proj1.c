@@ -8,8 +8,8 @@
 
 typedef struct Entry Entry;
 struct Entry {
-  unsigned long col;
-  double val;
+    unsigned long col;
+    double val;
 };
 
 void get_entry(Entry *entry, FILE *input_file);
@@ -50,18 +50,18 @@ int main (int argc, char *argv[]) {
     for(e=matrix; e<=last; e++) {
         prev_row = cur_row;
         count = fscanf(input_file, "%lf %lu %lu", &(e->val), &(e->col), &cur_row);
-	if (count != 3) {
-	    perror("The data file has a corrupt line\n");
-	}
+        if (count != 3) {
+            perror("The data file has a corrupt line\n");
+        }
         if (cur_row != prev_row) {
             rows[cur_row-1] = e;
         }
-	//	printf("prev_row: %lu; cur_row: %lu; e: %lu\n", prev_row, cur_row, (long unsigned int)e);
-	e->col--;
+    //  printf("prev_row: %lu; cur_row: %lu; e: %lu\n", prev_row, cur_row, (long unsigned int)e);
+    e->col--;
     }
 
     for(i=0; i<=dim; i++) {
-	//        printf("i: %d; *row: %lu\n", i, (long unsigned int)rows[i]);
+        //        printf("i: %d; *row: %lu\n", i, (long unsigned int)rows[i]);
     }
 
     printf("Time to load matrix: %lf\n", DELTA_T(time));
@@ -82,21 +82,21 @@ int main (int argc, char *argv[]) {
 void get_dimensions(long *dim, long *entries, FILE *input_file) {
     int count = fscanf(input_file, "%ld %ld", dim, entries);
     if(count != 2) {
-	perror("The input file does not state the dimension and number of entries on the first line.\n");
+        perror("The input file does not state the dimension and number of entries on the first line.\n");
     }
 }
 
 void print_matrix(Entry matrix[], long entries) {
     int i;
     for(i=0; i<entries; i++) {
-	printf("Val: %lf; Col: %lu\n", matrix[i].val, matrix[i].col);
+        printf("Val: %lf; Col: %lu\n", matrix[i].val, matrix[i].col);
     }
 }
 
 void print_vect(double vect[], long dim) {
     long i;
     for(i=0; i<dim; i++) {
-	printf("i: %ld; val: %lg\n", i, vect[i]);
+        printf("i: %ld; val: %lg\n", i, vect[i]);
     }
 }
 
@@ -104,10 +104,10 @@ void right_mult(Entry matrix[], long entries, Entry *rows[], long dim, double ve
     Entry *e;
     long i;
     for(i=0; i<dim; i++) {
-	for(e=rows[i]; e<rows[i+1]; e++) {
-	    out[i] += e->val * vector[e->col];
-	    //	    printf("i: %lu; row: %lu; e->val: %lg; e->col: %lu\n", i, (unsigned long)rows[i], e->val, e->col);
-	}
+        for(e=rows[i]; e<rows[i+1]; e++) {
+            out[i] += e->val * vector[e->col];
+            //      printf("i: %lu; row: %lu; e->val: %lg; e->col: %lu\n", i, (unsigned long)rows[i], e->val, e->col);
+        }
     }
 }
 
@@ -115,9 +115,9 @@ void left_mult(Entry matrix[], long entries, Entry *rows[], long dim, double vec
     Entry *e;
     int i;
     for(i=0; i<dim; i++) {
-	for(e=rows[i]; e<rows[i+1]; e++) {
-	    out[e->col] += e->val * vector[i];
-	}
+        for(e=rows[i]; e<rows[i+1]; e++) {
+            out[e->col] += e->val * vector[i];
+        }
     }
 }
 
@@ -125,11 +125,11 @@ void normalize(double vector[], long dim) {
     double *cur, *last, total=0;
     last = &vector[dim-1];
     for(cur=vector; cur<=last; cur++) {
-	total += *cur;
-	//printf("*cur: %lf\n", *cur); 
+        total += *cur;
+        //printf("*cur: %lf\n", *cur); 
     }
     for(cur=vector; cur<=last; cur++) {
-	*cur /= total;
+        *cur /= total;
     }
 }
 
@@ -137,8 +137,8 @@ double vect_diff(double a[], double b[], long dim) {
     double *cur_a, *cur_b, *last_a, total=0;
     last_a = &a[dim-1];
     for(cur_a=a, cur_b=b; cur_a<=last_a; cur_a++, cur_b++) {
-      //      printf("*cur_a: %lg\n", *cur_a);
-      total += ((*cur_a - *cur_b)>0 ? (*cur_a - *cur_b) : (*cur_b - *cur_a));
+        //      printf("*cur_a: %lg\n", *cur_a);
+        total += ((*cur_a - *cur_b)>0 ? (*cur_a - *cur_b) : (*cur_b - *cur_a));
     }
     return total;
 }
@@ -149,7 +149,7 @@ int calc_eigenvector(Entry matrix[], long entries, Entry *rows[], long dim, void
 
     int i;
     for(i=0; i < dim; i++) {
-      vector1[i]= 1.0 * ((i+1) % 2);
+        vector1[i]= 1.0 * ((i+1) % 2);
     }
     // start them in the "wrong" order, so that the first swap corrects it
     dest = vector1;
@@ -159,19 +159,19 @@ int calc_eigenvector(Entry matrix[], long entries, Entry *rows[], long dim, void
     normalize(dest, dim);
 
     for(i=0; i<ITERMAX; i++) {
-	//swap the vectors
-	temp = source;
-	source = dest;
-	dest = temp;
-	for(d = &dest[dim-1]; d!=dest; d--) *d = 0.0; //clear dest
-	
-	mult(matrix, entries, rows, dim, source, dest);
+        //swap the vectors
+        temp = source;
+        source = dest;
+        dest = temp;
+        for(d = &dest[dim-1]; d!=dest; d--) *d = 0.0; //clear dest
+        
+        mult(matrix, entries, rows, dim, source, dest);
 
-	normalize(dest, dim);
-	
-	diff = vect_diff(dest, source, dim);
-	printf("i: %d; |x-%c|: %lg\n", i, (mult==&left_mult ? 'y' : 'z'), diff);
-	if (diff < EPSILON) break;
+        normalize(dest, dim);
+        
+        diff = vect_diff(dest, source, dim);
+        printf("i: %d; |x-%c|: %lg\n", i, (mult==&left_mult ? 'y' : 'z'), diff);
+        if (diff < EPSILON) break;
     }
     return i;
 }
