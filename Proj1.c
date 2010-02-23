@@ -191,5 +191,7 @@ int calc_eigenvector(Entry matrix[], long entries, Entry *rows[], long dim, void
         printf("i: %d; |x-%c|: %lg\n", i, (mult==&left_mult ? 'y' : 'z'), diff);
         if (diff < EPSILON) break;
     }
+    
+    if (i != ITERMAX) { i += 1; }
     return i;
 }
