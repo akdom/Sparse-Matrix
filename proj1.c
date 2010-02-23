@@ -15,8 +15,6 @@ struct Entry {
 
 void get_entry(Entry *entry, FILE *input_file);
 void get_dimensions(long *dim, long *entries, FILE *input_file);
-int row_sort(const void *_a, const void *_b);
-int col_sort(const void *_a, const void *_b);
 void right_mult(Entry matrix[], long entries, Entry *rows[], long dim, double vector[], double out[]);
 void left_mult(Entry matrix[], long entries, Entry *rows[], long dim, double vector[], double out[]);
 void normalize(double vector[], long dim);
@@ -94,7 +92,7 @@ void right_mult(Entry matrix[], long entries, Entry *rows[], long dim, double ve
 
 void left_mult(Entry matrix[], long entries, Entry *rows[], long dim, double vector[], double out[]) {
     Entry *e;
-    int i;
+    long i;
     for(i=0; i<dim; i++) {
         for(e=rows[i]; e<rows[i+1]; e++) {
             out[e->col] += e->val * vector[i];
@@ -126,7 +124,7 @@ int calc_eigenvector(Entry matrix[], long entries, Entry *rows[], long dim, void
     double vector1[dim], vector2[dim];
     double *temp, *source, *dest, *d, diff;
 
-    int i;
+    long i;
     for(i=0; i < dim; i++) {
         vector1[i]= 1.0 * ((i+1) % 2);
     }
