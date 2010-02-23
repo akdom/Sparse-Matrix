@@ -5,7 +5,7 @@ No reference code was used or modified in the making of this project.
 To compile and run the project:
 
 1.
-    make proj1.out
+    make
 
 2.
     ./proj1.out <sparse-data-file>
