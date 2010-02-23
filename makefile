@@ -1,4 +1,4 @@
-PROGRAMS= Proj1.out
+PROGRAMS= proj1.out
 
 CC=gcc
 
