@@ -19,3 +19,5 @@ Each element of the matrix is represented by a struct that contains the value an
 When the program multiplies, it loops through the rows array, gets the element at that pointer, and increments down the elements array. Each elemement's value is then multiplied against the correct value of the input vector using it's column number and the current row counter. This process is repeated until the max number of iterations is reached, or the eigenvector converges within tolerance.
 
 
+
+Join the chat at https://gitter.im/akdom/Sparse-Matrix
